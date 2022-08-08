@@ -30,7 +30,9 @@ from utils.general import (LOGGER, apply_classifier, check_file, check_img_size,
                            scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
+from time import perf_counter
 
+import otvision_functions as otvision
 
 @torch.no_grad()
 def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
@@ -142,6 +144,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     dt, seen = [0.0, 0.0, 0.0], 0
     for path, img, im0s, vid_cap, s in dataset:
+        t1_ = perf_counter()
         t1 = time_sync()
         if onnx:
             img = img.astype('float32')
@@ -196,6 +199,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
+        detection_list = []
         # Process predictions
         for i, det in enumerate(pred):  # per image
             seen += 1
@@ -212,6 +216,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+            detections_of_frame_list = []
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -222,9 +227,13 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
+                
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        # OTC format
+                        detections_of_frame_list.append(xywh+[conf, cls])
+
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
@@ -235,7 +244,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-
+            detection_list.append(detections_of_frame_list)
             # Print time (inference-only)
             LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
 
@@ -263,7 +272,19 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                             save_path += '.mp4'
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
-
+        # OTC
+        yolo_detections=detection_list
+        t2_ = perf_counter()
+        duration = t2_ - t1_
+        det_fps = len(yolo_detections) / duration
+        otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
+        class_names = names
+        det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=True)
+        vid_config = otvision._get_vidconfig(file_path=path, width=vid_cap.get(3), height=vid_cap.get(4), fps=vid_cap.get(cv2.CAP_PROP_FPS), frames=vid_cap.get(7))
+        detections = otvision._convert_detections(
+            yolo_detections, class_names, vid_config, det_config
+        )
+        otvision.save_detections(detections, path)
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS' % t)

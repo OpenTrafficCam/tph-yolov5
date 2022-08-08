@@ -1,5 +1,8 @@
 
 from pathlib import Path
+import json
+from otvision_config import CONFIG
+
 def _print_overall_performance_stats(duration, det_fps):
     print("All Chunks done in {0:0.2f} s ({1:0.2f} fps)".format(duration, det_fps))
 
@@ -61,3 +64,18 @@ def _convert_detections(yolo_detections, names, vid_config, det_config):
             detection.append(bbox)
         data[str(no + 1)] = {"classified": detection}
     return {"vid_config": vid_config, "det_config": det_config, "data": data}
+
+def save_detections(
+    detections, infile, overwrite=CONFIG["DETECT"]["YOLO"]["OVERWRITE"]
+):
+    if overwrite or not get_files(infile, CONFIG["FILETYPES"]["DETECT"]):
+        infile_path = Path(infile)
+        outfile = str(infile_path.with_suffix(CONFIG["FILETYPES"]["DETECT"]))
+        with open(outfile, "w") as f:
+            json.dump(detections, f, indent=4)
+        if overwrite:
+            print("Detections file overwritten")
+        else:
+            print("Detections file saved")
+    else:
+        print("Detections file already exists, was not overwritten")
