@@ -2,8 +2,8 @@ from re import A
 
 from matplotlib import projections
 import detect
-
-detect.check_requirements(exclude=('tensorboard', 'thop'))
+from utils.general import check_requirements
+check_requirements(exclude=('tensorboard', 'thop'))
 
 weights = r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt"
 source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5"

@@ -61,6 +61,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         ):
+
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -143,6 +144,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if pt and device.type != 'cpu':
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     dt, seen = [0.0, 0.0, 0.0], 0
+    detection_list = []
     for path, img, im0s, vid_cap, s in dataset:
         t1_ = perf_counter()
         t1 = time_sync()
@@ -199,7 +201,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
-        detection_list = []
+        
         # Process predictions
         for i, det in enumerate(pred):  # per image
             seen += 1
@@ -232,7 +234,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         # OTC format
-                        detections_of_frame_list.append(xywh+[conf, cls])
+                        detections_of_frame_list.append(xywh+[conf.item(), cls.item()])
 
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
@@ -272,19 +274,19 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                             save_path += '.mp4'
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
-        # OTC
-        yolo_detections=detection_list
-        t2_ = perf_counter()
-        duration = t2_ - t1_
-        det_fps = len(yolo_detections) / duration
-        otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
-        class_names = names
-        det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=True)
-        vid_config = otvision._get_vidconfig(file_path=path, width=vid_cap.get(3), height=vid_cap.get(4), fps=vid_cap.get(cv2.CAP_PROP_FPS), frames=vid_cap.get(7))
-        detections = otvision._convert_detections(
-            yolo_detections, class_names, vid_config, det_config
-        )
-        otvision.save_detections(detections, path)
+    # OTC
+    yolo_detections=detection_list
+    t2_ = perf_counter()
+    duration = t2_ - t1_
+    det_fps = len(yolo_detections) / duration
+    otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
+    class_names = names
+    det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=True)
+    vid_config = otvision._get_vidconfig(file=path, width=vid_cap.get(3), height=vid_cap.get(4), fps=vid_cap.get(cv2.CAP_PROP_FPS), frames=vid_cap.get(7))
+    detections = otvision._convert_detections(
+        yolo_detections, class_names, vid_config, det_config
+    )
+    otvision.save_detections(detections, path)
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS' % t)
