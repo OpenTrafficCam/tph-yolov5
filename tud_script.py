@@ -11,4 +11,13 @@ save_txt = True
 save_conf = True
 project = source
 subfolder = "tph-yolov5l-xs-1"
-detect.run(weights=weights, source=source, project=source, name=subfolder, save_txt=True, save_conf=True)
+device = 4
+nosave = True
+detect.run(
+    weights=weights, 
+    source=source, 
+    project=source, 
+    name=subfolder, 
+    save_txt=True, 
+    save_conf=True, 
+    nosave=nosave)

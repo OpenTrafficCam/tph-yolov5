@@ -145,7 +145,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     dt, seen = [0.0, 0.0, 0.0], 0
     detection_list = []
-    for path, img, im0s, vid_cap, s in dataset:
+    for path, img, im0s, vid_cap, s in dataset: 
+        print("durchlaufx")
         t1_ = perf_counter()
         t1 = time_sync()
         if onnx:
@@ -281,8 +282,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     det_fps = len(yolo_detections) / duration
     otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
     class_names = names
-    det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=True)
-    vid_config = otvision._get_vidconfig(file=path, width=vid_cap.get(3), height=vid_cap.get(4), fps=vid_cap.get(cv2.CAP_PROP_FPS), frames=vid_cap.get(7))
+    det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=False)
+    vid_config = otvision._get_vidconfig(file=path, width=dataset[0][3].get(cv2.CAP_PROP_FRAME_WIDTH), height=dataset[0][3].get(cv2.CAP_PROP_FRAME_HEIGHT), fps=dataset[0][3].get(cv2.CAP_PROP_FPS), frames=dataset[0][3].get(cv2.CAP_PROP_FRAME_COUNT))
     detections = otvision._convert_detections(
         yolo_detections, class_names, vid_config, det_config
     )
