@@ -5,8 +5,8 @@ import detect
 
 detect.check_requirements(exclude=('tensorboard', 'thop'))
 
-weights = r"yolov5l-xs-1.pt"
-source = r"D:\Testvideos\TKV\Testauswertung\raw"
+weights = r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt"
+source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5"
 save_txt = True
 save_conf = True
 project = source
