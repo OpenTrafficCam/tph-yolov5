@@ -8,10 +8,10 @@ source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5\kleine 
 tu_dict ={
     "weights" : r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt",
     "source" : source,
-    "save_txt" : True,
+    "save_txt" : False, # single txt file for every image
     "save_conf" : True,
     "project" : source,
-    "name" : "tph-yolov5l-xs-1", #subfolder
+    "name" : "export_of_tph-yolov5l-xs-1", #subfolder
     "device" : "",
     "nosave" : True, # video with bboxes
     "normalize_output" : False, # odet xywh output

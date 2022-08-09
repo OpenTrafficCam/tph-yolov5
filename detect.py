@@ -232,15 +232,16 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 # Write results
                 
                 for *xyxy, conf, cls in reversed(det):
+                    
+                    xywh = xyxy2xywh(torch.tensor(xyxy).view(1, 4))
+                    xywh_normalized = (xywh / gn).view(-1).tolist()  # normalized xywh
+                    xywh = xywh.view(-1).tolist()
+                    # OTC format
+                    if normalize_output:
+                        detections_of_frame_list.append(xywh_normalized+[conf.item(), cls.item()])
+                    else:
+                        detections_of_frame_list.append(xywh+[conf.item(), cls.item()])
                     if save_txt:  # Write to file
-                        xywh = xyxy2xywh(torch.tensor(xyxy).view(1, 4))
-                        xywh_normalized = (xywh / gn).view(-1).tolist()  # normalized xywh
-                        xywh = xywh.view(-1).tolist()
-                        # OTC format
-                        if normalize_output:
-                            detections_of_frame_list.append(xywh_normalized+[conf.item(), cls.item()])
-                        else:
-                            detections_of_frame_list.append(xywh+[conf.item(), cls.item()])
                         line = (cls, *xywh_normalized, conf) if save_conf else (cls, *xywh_normalized)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
@@ -292,7 +293,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     detections = otvision._convert_detections(
         yolo_detections, class_names, vid_config, det_config
     )
-    otvision.save_detections(detections, path)
+    otvision.save_detections(detections, str(save_dir) +r"/" + os.path.split(path)[1])
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS' % t)
