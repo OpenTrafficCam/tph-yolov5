@@ -4,20 +4,17 @@ from matplotlib import projections
 import detect
 from utils.general import check_requirements
 check_requirements(exclude=('tensorboard', 'thop'))
+source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5\kleine Videodatei"
+tu_dict ={
+    "weights" : r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt",
+    "source" : source,
+    "save_txt" : True,
+    "save_conf" : True,
+    "project" : source,
+    "name" : "tph-yolov5l-xs-1", #subfolder
+    "device" : "",
+    "nosave" : True, # video with bboxes
+    "normalize_output" : False, # odet xywh output
+}
 
-weights = r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt"
-source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5\große Videodatei"
-save_txt = True
-save_conf = True
-project = source
-subfolder = "tph-yolov5l-xs-1"
-device = "0"
-nosave = True
-detect.run(
-    weights=weights, 
-    source=source, 
-    project=source, 
-    name=subfolder, 
-    save_txt=True, 
-    save_conf=True, 
-    nosave=nosave)
+detect.run(**tu_dict)

@@ -60,6 +60,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
+        normalize_output=False # should the odtet output of xywh of the bounding boxes be normalized
         ):
 
     source = str(source)
@@ -232,11 +233,15 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        xywh = xyxy2xywh(torch.tensor(xyxy).view(1, 4))
+                        xywh_normalized = (xywh / gn).view(-1).tolist()  # normalized xywh
+                        xywh = xywh.view(-1).tolist()
                         # OTC format
-                        detections_of_frame_list.append(xywh+[conf.item(), cls.item()])
-
-                        line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                        if normalize_output:
+                            detections_of_frame_list.append(xywh_normalized+[conf.item(), cls.item()])
+                        else:
+                            detections_of_frame_list.append(xywh+[conf.item(), cls.item()])
+                        line = (cls, *xywh_normalized, conf) if save_conf else (cls, *xywh_normalized)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
@@ -283,7 +288,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
     class_names = names
     det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=False)
-    vid_config = otvision._get_vidconfig(file=path, width=dataset.cap.get(cv2.CAP_PROP_FRAME_WIDTH), height=dataset.cap.get(cv2.CAP_PROP_FRAME_HEIGHT), fps=dataset.cap.get(cv2.CAP_PROP_FPS), frames=dataset.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    vid_config = otvision._get_vidconfig(**dataset.video_properties[0])
     detections = otvision._convert_detections(
         yolo_detections, class_names, vid_config, det_config
     )

@@ -179,6 +179,7 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.video_properties = []
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -232,6 +233,13 @@ class LoadImages:
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.video_properties.append({
+            "file":path,
+            "width":self.cap.get(cv2.CAP_PROP_FRAME_WIDTH),
+            "height":self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT),
+            "fps":self.cap.get(cv2.CAP_PROP_FPS),
+            "frames":self.cap.get(cv2.CAP_PROP_FRAME_COUNT),
+        })
 
     def __len__(self):
         return self.nf  # number of files
