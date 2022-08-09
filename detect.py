@@ -72,7 +72,11 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source = check_file(source)  # download
 
     # Directories
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+    if name is None:
+        new_path = Path(project)
+    else:
+        new_path = Path(project) / name
+    save_dir = increment_path(new_path, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Initialize
@@ -146,7 +150,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     dt, seen = [0.0, 0.0, 0.0], 0
     detection_list = []
-    for path, img, im0s, vid_cap, s in dataset: 
+    for path, img, im0s, vid_cap, s in dataset:
+        if len(detection_list) < dataset.count + 1 - dataset.ni: # new video?
+            detection_list.append([])
         t1_ = perf_counter()
         t1 = time_sync()
         if onnx:
@@ -252,7 +258,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-            detection_list.append(detections_of_frame_list)
+            detection_list[-1].append(detections_of_frame_list)
             # Print time (inference-only)
             LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
 
@@ -282,18 +288,19 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     vid_writer[i].write(im0)
     # OTC
     #for i in range(len(dataset.files)):
-    yolo_detections=detection_list
     t2_ = perf_counter()
     duration = t2_ - t1_
-    det_fps = len(yolo_detections) / duration
+    det_fps = len(detection_list) / duration
     otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
     class_names = names
     det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=False)
-    vid_config = otvision._get_vidconfig(**dataset.video_properties[0])
-    detections = otvision._convert_detections(
-        yolo_detections, class_names, vid_config, det_config
-    )
-    otvision.save_detections(detections, str(save_dir) +r"/" + os.path.split(path)[1])
+    # otdet for every video
+    for i, single_video_detections in enumerate(detection_list):
+        vid_config = otvision._get_vidconfig(**dataset.video_properties[i]) 
+        detections = otvision._convert_detections(
+            single_video_detections, class_names, vid_config, det_config
+        )
+        otvision.save_detections(detections, str(save_dir) +r"/" + os.path.split(dataset.video_properties[i]["file"])[1])
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS' % t)

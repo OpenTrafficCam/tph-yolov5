@@ -2,6 +2,8 @@
 from pathlib import Path
 import json
 from otvision_config import CONFIG
+import os
+import copy
 
 def _print_overall_performance_stats(duration, det_fps):
     print("All Chunks done in {0:0.2f} s ({1:0.2f} fps)".format(duration, det_fps))
@@ -68,12 +70,18 @@ def _convert_detections(yolo_detections, names, vid_config, det_config):
 def save_detections(
     detections, infile, overwrite=CONFIG["DETECT"]["YOLO"]["OVERWRITE"]
 ): 
-    if overwrite or not get_files(infile, CONFIG["FILETYPES"]["DETECT"]):
+    infile_list = os.listdir(os.path.split(infile)[0])
+    for i, t in enumerate(copy.deepcopy(infile_list)):
+        infile_list[i] = os.path.split(infile)[0] + r"/" + t
+
+    existing_files = get_files(infile_list, CONFIG["FILETYPES"]["DETECT"])
+    if overwrite or not existing_files:
+        print(existing_files)
         infile_path = Path(infile)
         outfile = str(infile_path.with_suffix(CONFIG["FILETYPES"]["DETECT"]))
         with open(outfile, "w") as f:
             json.dump(detections, f, indent=4)
-        if overwrite:
+        if existing_files:
             print("Detections file overwritten")
         else:
             print("Detections file saved")
@@ -100,7 +108,6 @@ def get_files(paths, filetypes=None, replace_filetype=False, search_subdirs=True
     Returns:
         [list]: [list of filenames as str]
     """
-
     files = set()
 
     # Check, if paths is a str or a list
@@ -108,7 +115,7 @@ def get_files(paths, filetypes=None, replace_filetype=False, search_subdirs=True
         paths = [paths]
     elif type(paths) is not list and not isinstance(paths, Path):
         raise TypeError("Paths needs to be a str, a list of str, or Path object")
-
+    
     # Check if filetypes is str or a list and transform it
     if filetypes:
         if type(filetypes) is not list:
@@ -122,7 +129,6 @@ def get_files(paths, filetypes=None, replace_filetype=False, search_subdirs=True
                 if not filetype.startswith("."):
                     filetype = "." + filetype
                 filetypes[idx] = filetype.lower()
-
     # add all files to a single list _files_
     for path in paths:
         path = Path(path)
@@ -136,8 +142,11 @@ def get_files(paths, filetypes=None, replace_filetype=False, search_subdirs=True
                     path = path.with_suffix(filetypes[0])
             # Add path to list of returned paths if filetype meets requirements
             file = str(path)
+            print(file)
+            print(filetypes)
             if filetypes:
                 for filetype in filetypes:
+                    print(path.suffix.lower())
                     if path.suffix.lower() == filetype:
                         files.add(str(path))
             else:

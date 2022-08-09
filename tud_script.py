@@ -11,10 +11,12 @@ tu_dict ={
     "save_txt" : False, # single txt file for every image
     "save_conf" : True,
     "project" : source,
-    "name" : "export_of_tph-yolov5l-xs-1", #subfolder
+    "name" : None, #subfolder ;None --> no extra folder 
+    # "export_of_tph-yolov5l-xs-1"
     "device" : "",
     "nosave" : True, # video with bboxes
     "normalize_output" : False, # odet xywh output
+    "exist_ok": True
 }
 
 detect.run(**tu_dict)
