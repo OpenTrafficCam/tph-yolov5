@@ -6,12 +6,12 @@ from utils.general import check_requirements
 check_requirements(exclude=('tensorboard', 'thop'))
 
 weights = r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt"
-source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5"
+source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5\große Videodatei"
 save_txt = True
 save_conf = True
 project = source
 subfolder = "tph-yolov5l-xs-1"
-device = 4
+device = "0"
 nosave = True
 detect.run(
     weights=weights, 

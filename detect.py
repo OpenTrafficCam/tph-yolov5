@@ -146,7 +146,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     dt, seen = [0.0, 0.0, 0.0], 0
     detection_list = []
     for path, img, im0s, vid_cap, s in dataset: 
-        print("durchlaufx")
         t1_ = perf_counter()
         t1 = time_sync()
         if onnx:
@@ -276,6 +275,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
     # OTC
+    #for i in range(len(dataset.files)):
     yolo_detections=detection_list
     t2_ = perf_counter()
     duration = t2_ - t1_
@@ -283,7 +283,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     otvision._print_overall_performance_stats(duration=duration,det_fps=det_fps)
     class_names = names
     det_config = otvision._get_det_config(weights, conf_thres, iou_thres, size=None, chunksize=None, normalized=False)
-    vid_config = otvision._get_vidconfig(file=path, width=dataset[0][3].get(cv2.CAP_PROP_FRAME_WIDTH), height=dataset[0][3].get(cv2.CAP_PROP_FRAME_HEIGHT), fps=dataset[0][3].get(cv2.CAP_PROP_FPS), frames=dataset[0][3].get(cv2.CAP_PROP_FRAME_COUNT))
+    vid_config = otvision._get_vidconfig(file=path, width=dataset.cap.get(cv2.CAP_PROP_FRAME_WIDTH), height=dataset.cap.get(cv2.CAP_PROP_FRAME_HEIGHT), fps=dataset.cap.get(cv2.CAP_PROP_FPS), frames=dataset.cap.get(cv2.CAP_PROP_FRAME_COUNT))
     detections = otvision._convert_detections(
         yolo_detections, class_names, vid_config, det_config
     )
