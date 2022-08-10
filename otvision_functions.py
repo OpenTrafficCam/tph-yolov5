@@ -70,23 +70,22 @@ def _convert_detections(yolo_detections, names, vid_config, det_config):
 def save_detections(
     detections, infile, overwrite=CONFIG["DETECT"]["YOLO"]["OVERWRITE"]
 ): 
-    infile_list = os.listdir(os.path.split(infile)[0])
-    for i, t in enumerate(copy.deepcopy(infile_list)):
-        infile_list[i] = os.path.split(infile)[0] + r"/" + t
-
-    existing_files = get_files(infile_list, CONFIG["FILETYPES"]["DETECT"])
-    if overwrite or not existing_files:
-        print(existing_files)
+    # infile_list = os.listdir(os.path.split(infile)[0])
+    # for i, t in enumerate(copy.deepcopy(infile_list)):
+    #     infile_list[i] = os.path.split(infile)[0] + r"/" + t
+    filepath = os.path.dirname(infile) + "/" + os.path.splitext(os.path.basename(infile))[0] + CONFIG["FILETYPES"]["DETECT"]
+    exists = os.path.isfile(filepath)
+    if overwrite or not exists:
         infile_path = Path(infile)
         outfile = str(infile_path.with_suffix(CONFIG["FILETYPES"]["DETECT"]))
         with open(outfile, "w") as f:
             json.dump(detections, f, indent=4)
-        if existing_files:
-            print("Detections file overwritten")
+        if exists:
+            print("Detections file (" + os.path.basename(filepath) + ") overwritten") 
         else:
-            print("Detections file saved")
+            print("Detections as " + os.path.basename(filepath) + " saved")
     else:
-        print("Detections file already exists, was not overwritten")
+        print(os.path.basename(infile)+" already exists, was not overwritten")
 
 def get_files(paths, filetypes=None, replace_filetype=False, search_subdirs=True):
     """
