@@ -195,6 +195,7 @@ class LoadImages:
 
     def __next__(self):
         if self.count == self.nf:
+            print("nf")
             raise StopIteration
         path = self.files[self.count]
 
@@ -202,10 +203,12 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
-            if not ret_val:
+            # end of video?
+            if not ret_val and self.frames == self.frame:
                 self.count += 1
                 self.cap.release()
                 if self.count == self.nf:  # last video
+                    print("last video")
                     raise StopIteration
                 else:
                     path = self.files[self.count]
@@ -213,22 +216,27 @@ class LoadImages:
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
-
+            if ret_val:
+                s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
+            else:
+                s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: CV2 COULD NOT LOAD THE IMAGE'
         else:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
+            ret_val = True
 
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
+        if ret_val:
+            # Padded resize
+            img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
-        # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
-
+            # Convert
+            img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            img = np.ascontiguousarray(img)
+        else:
+            img = None
         return path, img, img0, self.cap, s
 
     def new_video(self, path):
@@ -265,6 +273,7 @@ class LoadWebcam:  # for inference
         if cv2.waitKey(1) == ord('q'):  # q to quit
             self.cap.release()
             cv2.destroyAllWindows()
+            print("q")
             raise StopIteration
 
         # Read frame
@@ -358,6 +367,7 @@ class LoadStreams:
         self.count += 1
         if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord('q'):  # q to quit
             cv2.destroyAllWindows()
+            print("cv2")
             raise StopIteration
 
         # Letterbox
