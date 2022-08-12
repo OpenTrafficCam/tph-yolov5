@@ -5,7 +5,7 @@ import detect
 from utils.general import check_requirements
 check_requirements(exclude=('tensorboard', 'thop'))
 
-source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5\große Videodatei"
+source = r"C:\Users\Kollascheck\Desktop\Test Cut und OTC\test_tph-yolov5\kleine Videodatei"
 tu_dict ={
     "weights" : r"\\vs-grp08.zih.tu-dresden.de\otc_live\models\YoloV5\drone\tph-yolov5\yolov5l-xs-1.pt",
     "source" : source,

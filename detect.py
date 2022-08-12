@@ -153,7 +153,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     img_loading_error_list = []
     for path, img, im0s, vid_cap, s in dataset:
         if len(detection_list) < dataset.count + 1 - dataset.ni: # new video?
-            detection_list.append([]) # appends [] even if img = None (couldnt load one)
+            detection_list.append([])
+        # if img could not get loaded, it will append something on detection_list    
         if not img is None:
             t1_ = perf_counter()
             t1 = time_sync()
@@ -318,7 +319,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         LOGGER.info("All images that cv2 could not load:")
         for img_error in img_loading_error_list:
             LOGGER.info(len(img_error))
-        LOGGER.info("cv2 could not load " + len(img_loading_error_list) + " images")
+        LOGGER.info("cv2 could not load a image " + len(img_loading_error_list) + " times")
     else:
         LOGGER.info("All images of the video(s) were processed")
 def parse_opt():

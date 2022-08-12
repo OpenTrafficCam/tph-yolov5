@@ -195,7 +195,6 @@ class LoadImages:
 
     def __next__(self):
         if self.count == self.nf:
-            print("nf")
             raise StopIteration
         path = self.files[self.count]
 
@@ -204,22 +203,22 @@ class LoadImages:
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
             # end of video?
-            if not ret_val and self.frames == self.frame:
+            if not ret_val and self.frames <= self.frame:
                 self.count += 1
                 self.cap.release()
                 if self.count == self.nf:  # last video
-                    print("last video")
                     raise StopIteration
                 else:
                     path = self.files[self.count]
                     self.new_video(path)
                     ret_val, img0 = self.cap.read()
 
-            self.frame += 1
+            
             if ret_val:
+                self.frame += 1
                 s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
             else:
-                s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: CV2 COULD NOT LOAD THE IMAGE'
+                s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: CV2 HAD A LOADING ERROR AFTER THIS IMAGE'
         else:
             # Read image
             self.count += 1
@@ -273,7 +272,6 @@ class LoadWebcam:  # for inference
         if cv2.waitKey(1) == ord('q'):  # q to quit
             self.cap.release()
             cv2.destroyAllWindows()
-            print("q")
             raise StopIteration
 
         # Read frame
@@ -367,7 +365,6 @@ class LoadStreams:
         self.count += 1
         if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord('q'):  # q to quit
             cv2.destroyAllWindows()
-            print("cv2")
             raise StopIteration
 
         # Letterbox
