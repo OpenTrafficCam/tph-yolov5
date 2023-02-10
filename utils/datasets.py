@@ -171,6 +171,8 @@ class LoadImages:
         images = [x for x in files if x.split('.')[-1].lower() in IMG_FORMATS]
         videos = [x for x in files if x.split('.')[-1].lower() in VID_FORMATS]
         ni, nv = len(images), len(videos)
+        self.ni = ni
+        self.nv = nv
 
         self.img_size = img_size
         self.stride = stride
@@ -179,6 +181,7 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.video_properties = []
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -199,7 +202,8 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
-            if not ret_val:
+            # end of video?
+            if not ret_val and self.frames <= self.frame:
                 self.count += 1
                 self.cap.release()
                 if self.count == self.nf:  # last video
@@ -209,29 +213,42 @@ class LoadImages:
                     self.new_video(path)
                     ret_val, img0 = self.cap.read()
 
-            self.frame += 1
-            s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
-
+            
+            if ret_val:
+                self.frame += 1
+                s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
+            else:
+                s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: CV2 HAD A LOADING ERROR AFTER THIS IMAGE'
         else:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
+            ret_val = True
 
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
+        if ret_val:
+            # Padded resize
+            img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
-        # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
-
+            # Convert
+            img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            img = np.ascontiguousarray(img)
+        else:
+            img = None
         return path, img, img0, self.cap, s
 
     def new_video(self, path):
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.video_properties.append({
+            "file":path,
+            "width":self.cap.get(cv2.CAP_PROP_FRAME_WIDTH),
+            "height":self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT),
+            "fps":self.cap.get(cv2.CAP_PROP_FPS),
+            "frames":self.cap.get(cv2.CAP_PROP_FRAME_COUNT),
+        })
 
     def __len__(self):
         return self.nf  # number of files
